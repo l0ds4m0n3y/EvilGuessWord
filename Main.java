@@ -1,34 +1,40 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Main{
+    static Map<Integer, Set<String>> wordLengthMap = new HashMap<>();
     static String gameString = "_";
     static ArrayList<String> dictionary;
 
     public static void main(String[] args) {
-        dictionary = loadDictionary(0);
+        try { setUp(0); 
+        } catch (FileNotFoundException e) {}
+
         char again = 'y';
         Scanner scan = new Scanner(System.in);
         int triesLeft = 0;
         int wordLength = 0;
+        Set<String> mainSet = null;
         
         //play again loop
         while(again == 'y'){
-            while(wordLength <= 2 || wordLength >= 29 || triesLeft <= 0){
+            while(mainSet == null || mainSet.size() == 0 || triesLeft <= 0){
                 System.out.print("Enter word Length: ");
                 wordLength = scan.nextInt();
+                mainSet = wordLengthMap.get(wordLength);
                 scan.nextLine(); //buffer
 
                 System.out.print("\nEnter num of guesses: ");
                 triesLeft = scan.nextInt();
-                scan.nextLine();
-
-                for(String s : findWordOfLenght(wordLength)){
-                    System.out.println(s);
-                }
+                scan.nextLine(); //buffer
             }
+            mainSet.forEach(System.out::println);
             //clearConsole();
 
             setUpBoard(wordLength);
@@ -44,17 +50,29 @@ public class Main{
                 doEvilStuff(scan.nextLine().charAt(0));
             }
             again = scan.nextLine().charAt(0);
-        }    
+        }   
+        scan.close(); 
     }
 
-    private static ArrayList<String> findWordOfLenght(int length){
-        ArrayList<String> wordsOfLengthN = new ArrayList<>();
-        for(String s : dictionary){
-            if(s.length() == length){
-                wordsOfLengthN.add(s);
-            }
+    private static void setUp(int i) throws FileNotFoundException {
+        for(int j = 0; j < 30; j++ ){
+            wordLengthMap.put(j, new HashSet<String>());
         }
-        return wordsOfLengthN; 
+
+        File dictionaryFile;
+        if(i == 1){
+            dictionaryFile = new File("SmallDictionary.txt");
+        }else{
+            dictionaryFile = new File("Dictionary.txt");
+        }
+
+        Scanner fileScan = new Scanner(dictionaryFile);
+
+        while(fileScan.hasNext()){
+            String str = fileScan.nextLine();
+            wordLengthMap.get(str.length()).add(str);
+        }
+        fileScan.close();
     }
     
     private static void doEvilStuff(char guess) {
@@ -70,25 +88,5 @@ public class Main{
     private static void clearConsole(){
         System.out.print("\033[H\033[2J");
         System.out.flush();
-    }
-
-    private static ArrayList<String> loadDictionary(int i){ //TODO remove the if statement
-        File dictionaryFile;
-        ArrayList<String> dictionaryArray = new ArrayList<>();
-        if(i == 1){
-            dictionaryFile = new File("SmallDictionary.txt");
-        }else{
-            dictionaryFile = new File("Dictionary.txt");
-        }
-        
-        try {
-            Scanner fileScan = new Scanner(dictionaryFile);
-            while(fileScan.hasNext()){
-                dictionaryArray.add(fileScan.nextLine());
-            }
-            fileScan.close();
-        } catch (FileNotFoundException e) {}
-
-        return dictionaryArray;
     }
 }

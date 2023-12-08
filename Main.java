@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -8,7 +9,8 @@ import java.util.Set;
 
 public class Main {
     static Map<Integer, Set<String>> wordLengthMap = new HashMap<>();
-    static Map<Integer, Set<String>> mapOfIndecies = new HashMap<>();
+    static Map<ArrayList<Integer>, Set<String>> mapOfIndecies = new HashMap<>();
+    static Map<String, ArrayList<Integer>> mapStrToIntArray = new HashMap<>();
     static StringBuilder gameString = new StringBuilder("_ ");
     static int wordLength = 0;
     static Set<String> mainSet;
@@ -106,10 +108,10 @@ public class Main {
         fileScan.close();
     }
 
-    private static int findLargestSet(Map<Integer, Set<String>> map) {
+    private static ArrayList<Integer> findLargestSet(Map<ArrayList<Integer>, Set<String>> map) {
         Set<String> testSet = new HashSet<>();
-        int largestKey = -1;
-        for (Map.Entry<Integer, Set<String>> set : mapOfIndecies.entrySet()) {
+        ArrayList<Integer> largestKey = new ArrayList<>();
+        for (Map.Entry<ArrayList<Integer>, Set<String>> set : mapOfIndecies.entrySet()) {
             if (testSet.size() < set.getValue().size()) {
                 testSet = set.getValue();
                 largestKey = set.getKey();
@@ -122,14 +124,14 @@ public class Main {
 
         setUpMapOfIndicies(guess);
 
-        int largestSetIndex = findLargestSet(mapOfIndecies);
+        ArrayList<Integer> largestSetIndex = findLargestSet(mapOfIndecies);
         Set<String> returnSet = mapOfIndecies.get(largestSetIndex);
 
-        if (largestSetIndex == -1) {
+        if (largestSetIndex.contains(-1)) {
             triedWords += guess + " ";
             triesLeft--;
         } else {
-            gameString.setCharAt(largestSetIndex * 2, guess);
+            //set the gameboeard
         }
 
         // System.out.println(mapOfIndecies.toString());
@@ -140,14 +142,34 @@ public class Main {
     }
 
     private static void setUpMapOfIndicies(char guess) {
-        for (int i = -1; i < wordLength; i++) {
-            mapOfIndecies.put(i, new HashSet<>());
-        }
+        ArrayList<Integer> negativeone = new ArrayList<>();
+        negativeone.add(-1);
+        mapOfIndecies.put(negativeone, new HashSet<>());
 
         for (String s : mainSet) {
-            mapOfIndecies.get(s.indexOf(guess)).add(s);
-            mapOfIndecies.get(s.lastIndexOf(guess)).add(s);
+            countOccurances(guess, s);
+            if(mapStrToIntArray.get(s).isEmpty()){
+                mapOfIndecies.get(negativeone).add(s);
+            }
+            else{
+                ArrayList<Integer> list = mapStrToIntArray.get(s);
+                if(mapOfIndecies.containsKey(list)){
+                    mapOfIndecies.get(mapStrToIntArray.get(s)).add(s);
+                }else{
+                    mapOfIndecies.put(list, new HashSet<>());
+                }
+            }
         }
+    }
+
+    private static void countOccurances(char guess, String str){
+        ArrayList<Integer> indecies = new ArrayList<>(str.length());
+        for(int i = 0; i < str.length(); i++){
+            if(str.charAt(i) == guess){
+                indecies.add(i);
+            }
+        }
+        mapStrToIntArray.put(str, indecies);
     }
 
     private static void setUpBoard(int length) {

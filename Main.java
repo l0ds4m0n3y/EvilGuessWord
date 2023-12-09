@@ -10,16 +10,15 @@ import java.util.Set;
 public class Main {
     static Map<Integer, Set<String>> wordLengthMap = new HashMap<>();
     static Map<ArrayList<Integer>, Set<String>> mapOfIndecies = new HashMap<>();
-    static Map<String, ArrayList<Integer>> mapStrToIntArray = new HashMap<>();
-    static StringBuilder gameString = new StringBuilder("_ ");
-    static int wordLength = 0;
+    static StringBuilder gameString;
     static Set<String> mainSet;
-    static String triedWords;
+    static int wordLength = 0;
+    static String triedChars;
     static int triesLeft = 0;
 
     public static void main(String[] args) {
         try {
-            setUp(1);
+            setUp(0);
         } catch (FileNotFoundException e) {
         }
 
@@ -28,49 +27,22 @@ public class Main {
 
         // play again loop
         while (again == 'y') {
-            // SET UP
-            clearConsole();
-            triedWords = "";
-            mainSet = null;
-            while (mainSet == null || mainSet.size() == 0) {
-                try {
-                    System.out.print("Enter word Length: ");
-                    wordLength = scan.nextInt();
-                    mainSet = wordLengthMap.get(wordLength);
-
-                    scan.nextLine(); // buffer
-                    if (mainSet.size() <= 0)
-                        throw new Exception();
-                } catch (Exception e) {
-                    clearConsole();
-                    System.out.println("please enter a valid word length");
-                }
-            }
-
-            while (triesLeft <= 0) {
-                System.out.print("\nEnter a realistic number of guesses: ");
-                triesLeft = scan.nextInt();
-                scan.nextLine(); // buffer
-                clearConsole();
-            }
-            //
+            
+            setUpGame(scan);
 
             setUpBoard(wordLength);
 
             // main game loop
             while (gameString.toString().contains("_")) {
                 if (triesLeft <= 0) {
-                    clearConsole();
-                    System.out.println(triedWords);
-                    System.out.println("LOSER");
-                    System.out.println(mainSet.iterator().next().toUpperCase() + " was the final answer \n");
+                    gameOver();
                     break;
                 }
                 clearConsole();
-                mainSet.forEach(System.out::println); // TODO comment this out
+                //mainSet.forEach(System.out::println); // TODO comment this out
                 System.out.println("Guesses Remaining: " + triesLeft);
                 System.out.println(gameString);
-                System.out.println(triedWords);
+                System.out.println(triedChars);
 
                 doEvilStuff(scan.nextLine().charAt(0));
             }
@@ -85,6 +57,40 @@ public class Main {
             again = scan.nextLine().toLowerCase().charAt(0);
         }
         scan.close();
+    }
+
+    private static void setUpGame(Scanner scan){
+            clearConsole();
+            triedChars = "";
+            mainSet = null;
+            while (mainSet == null || mainSet.size() == 0) {
+                try {
+                    System.out.print("Enter word Length: ");
+                    wordLength = scan.nextInt();
+                    mainSet = wordLengthMap.get(wordLength);
+
+                    scan.nextLine(); // buffer
+                    if (mainSet.size() <= 0) throw new Exception();
+                } catch (Exception e) {
+                    clearConsole();
+                    System.out.println("please enter a valid word length");
+                }
+            }
+
+            while (triesLeft <= 0) {
+                System.out.print("\nEnter a realistic number of guesses: ");
+                triesLeft = scan.nextInt();
+                scan.nextLine(); // buffer
+                clearConsole();
+            }
+    }
+
+    private static void gameOver() {
+        clearConsole();
+        System.out.println(gameString);
+        System.out.println(triedChars);
+        System.out.println("HOW UNFORTUNATE");
+        System.out.println(mainSet.iterator().next().toUpperCase() + " was the final answer \n");
     }
 
     private static void setUp(int i) throws FileNotFoundException {
@@ -122,17 +128,21 @@ public class Main {
     private static void doEvilStuff(char guess) {
 
         setUpMapOfIndicies(guess);
+        //System.out.println(mapOfIndecies); //TODO comment this
+
 
         ArrayList<Integer> largestSetIndex = findLargestSet(mapOfIndecies);
         Set<String> returnSet = mapOfIndecies.get(largestSetIndex);
-
-        if (largestSetIndex.contains(-1)) {
-            triedWords += guess + " ";
+        
+        
+        if (largestSetIndex.isEmpty() || triedChars.contains(guess + " ")) {
             triesLeft--;
         } else {
-            for(int i : largestSetIndex){
-                gameString.setCharAt(i, guess);
-            }
+            addLetterToAnswer(guess, largestSetIndex);
+        }
+        
+        if(!triedChars.contains(guess + " ")){
+            triedChars += guess + " ";
         }
 
         mapOfIndecies.clear();
@@ -140,39 +150,36 @@ public class Main {
     }
 
     private static void setUpMapOfIndicies(char guess) {
-        ArrayList<Integer> negativeone = new ArrayList<>();
-        negativeone.add(-1);
-        mapOfIndecies.put(negativeone, new HashSet<>());
-
         for (String s : mainSet) {
-            countOccurances(guess, s);
-            if(mapStrToIntArray.get(s).isEmpty()){
-                mapOfIndecies.get(negativeone).add(s);
-            }
-            else{
-                ArrayList<Integer> list = mapStrToIntArray.get(s);
-                if(mapOfIndecies.containsKey(list)){
-                    mapOfIndecies.get(mapStrToIntArray.get(s)).add(s);
-                }else{
-                    mapOfIndecies.put(list, new HashSet<>());
-                }
+            ArrayList<Integer> list = countOccurances(guess, s);
+            if(mapOfIndecies.containsKey(list)){
+                mapOfIndecies.get(list).add(s);
+            }else{
+                mapOfIndecies.put(list, new HashSet<>());
+                mapOfIndecies.get(list).add(s);
             }
         }
     }
 
-    private static void countOccurances(char guess, String str){
+    private static ArrayList<Integer> countOccurances(char guess, String str){
         ArrayList<Integer> indecies = new ArrayList<>(str.length());
         for(int i = 0; i < str.length(); i++){
             if(str.charAt(i) == guess){
                 indecies.add(i);
             }
         }
-        mapStrToIntArray.put(str, indecies);
+        return indecies;
+    }
+
+    private static void addLetterToAnswer(char ch, ArrayList<Integer> indecies){
+        for(int i : indecies){
+            gameString.setCharAt(i * 2, ch);
+        }
     }
 
     private static void setUpBoard(int length) {
-        gameString = new StringBuilder("_ ");
-        for (int i = 1; i < length; i++) {
+        gameString = new StringBuilder();
+        for (int i = 0; i < length; i++) {
             gameString.append("_ ");
         }
     }

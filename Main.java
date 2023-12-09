@@ -88,10 +88,6 @@ public class Main {
     }
 
     private static void setUp(int i) throws FileNotFoundException {
-        for (int j = 0; j < 30; j++) {
-            wordLengthMap.put(j, new HashSet<String>());
-        }
-
         File dictionaryFile;
         if (i == 1) {
             dictionaryFile = new File("SmallDictionary.txt");
@@ -103,6 +99,9 @@ public class Main {
 
         while (fileScan.hasNext()) {
             String str = fileScan.nextLine();
+            if(!wordLengthMap.containsKey(str.length()))
+                wordLengthMap.put(str.length(), new HashSet<String>());
+ 
             wordLengthMap.get(str.length()).add(str);
         }
         fileScan.close();
@@ -131,11 +130,10 @@ public class Main {
             triedWords += guess + " ";
             triesLeft--;
         } else {
-            //set the gameboeard
+            for(int i : largestSetIndex){
+                gameString.setCharAt(i, guess);
+            }
         }
-
-        // System.out.println(mapOfIndecies.toString());
-        // System.out.println(returnSet.toString());
 
         mapOfIndecies.clear();
         mainSet = returnSet;

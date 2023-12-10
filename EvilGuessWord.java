@@ -8,9 +8,12 @@ import java.util.Scanner;
 import java.util.Set;
 
 /**
- * @author David Luna
+ * David Luna
+ * CS 270
+ * Lab 10
+ * Everthing should be working according to the lab instructions 
  */
-public class Main {
+public class EvilGuessWord {
     final static File smallDictionaryFile = new File("SmallDictionary.txt");
     final static File fullDictionaryFile = new File("Dictionary.txt");
 

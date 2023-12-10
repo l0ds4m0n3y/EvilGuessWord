@@ -8,6 +8,9 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class Main {
+    final static File smallDictionaryFile = new File("SmallDictionary.txt");
+    final static File fullDictionaryFile = new File("Dictionary.txt");
+
     static Map<Integer, Set<String>> wordLengthMap = new HashMap<>();
     static Map<ArrayList<Integer>, Set<String>> mapOfIndecies = new HashMap<>();
     static StringBuilder gameString;
@@ -17,17 +20,14 @@ public class Main {
     static int triesLeft = 0;
 
     public static void main(String[] args) {
-        try {
-            setUp(0);
-        } catch (FileNotFoundException e) {
-        }
+        try { setUp(fullDictionaryFile); } catch (FileNotFoundException e) {}
 
         char again = 'y';
         Scanner scan = new Scanner(System.in);
 
         // play again loop
         while (again == 'y') {
-            
+
             setUpGame(scan);
 
             setUpBoard(wordLength);
@@ -39,7 +39,7 @@ public class Main {
                     break;
                 }
                 clearConsole();
-                //mainSet.forEach(System.out::println); // TODO comment this out
+                // mainSet.forEach(System.out::println);
                 System.out.println("Guesses Remaining: " + triesLeft);
                 System.out.println(gameString);
                 System.out.println(triedChars);
@@ -59,30 +59,31 @@ public class Main {
         scan.close();
     }
 
-    private static void setUpGame(Scanner scan){
-            clearConsole();
-            triedChars = "";
-            mainSet = null;
-            while (mainSet == null || mainSet.size() == 0) {
-                try {
-                    System.out.print("Enter word Length: ");
-                    wordLength = scan.nextInt();
-                    mainSet = wordLengthMap.get(wordLength);
+    private static void setUpGame(Scanner scan) {
+        clearConsole();
+        triedChars = "";
+        mainSet = null;
+        while (mainSet == null || mainSet.size() == 0) {
+            try {
+                System.out.print("Enter word Length: ");
+                wordLength = scan.nextInt();
+                mainSet = wordLengthMap.get(wordLength);
 
-                    scan.nextLine(); // buffer
-                    if (mainSet.size() <= 0) throw new Exception();
-                } catch (Exception e) {
-                    clearConsole();
-                    System.out.println("please enter a valid word length");
-                }
-            }
-
-            while (triesLeft <= 0) {
-                System.out.print("\nEnter a realistic number of guesses: ");
-                triesLeft = scan.nextInt();
                 scan.nextLine(); // buffer
+                if (mainSet.size() <= 0)
+                    throw new Exception();
+            } catch (Exception e) {
                 clearConsole();
+                System.out.println("please enter a valid word length");
             }
+        }
+
+        while (triesLeft <= 0) {
+            System.out.print("\nEnter a realistic number of guesses: ");
+            triesLeft = scan.nextInt();
+            scan.nextLine(); // buffer
+            clearConsole();
+        }
     }
 
     private static void gameOver() {
@@ -93,23 +94,17 @@ public class Main {
         System.out.println(mainSet.iterator().next().toUpperCase() + " was the final answer \n");
     }
 
-    private static void setUp(int i) throws FileNotFoundException {
-        File dictionaryFile;
-        if (i == 1) {
-            dictionaryFile = new File("SmallDictionary.txt");
-        } else {
-            dictionaryFile = new File("Dictionary.txt");
-        }
-
+    private static void setUp(File dictionaryFile) throws FileNotFoundException {
         Scanner fileScan = new Scanner(dictionaryFile);
 
         while (fileScan.hasNext()) {
             String str = fileScan.nextLine();
-            if(!wordLengthMap.containsKey(str.length()))
+            if (!wordLengthMap.containsKey(str.length()))
                 wordLengthMap.put(str.length(), new HashSet<String>());
- 
+
             wordLengthMap.get(str.length()).add(str);
         }
+
         fileScan.close();
     }
 
@@ -128,20 +123,18 @@ public class Main {
     private static void doEvilStuff(char guess) {
 
         setUpMapOfIndicies(guess);
-        //System.out.println(mapOfIndecies); //TODO comment this
-
+        // System.out.println(mapOfIndecies);
 
         ArrayList<Integer> largestSetIndex = findLargestSet(mapOfIndecies);
         Set<String> returnSet = mapOfIndecies.get(largestSetIndex);
-        
-        
+
         if (largestSetIndex.isEmpty() || triedChars.contains(guess + " ")) {
             triesLeft--;
         } else {
             addLetterToAnswer(guess, largestSetIndex);
         }
-        
-        if(!triedChars.contains(guess + " ")){
+
+        if (!triedChars.contains(guess + " ")) {
             triedChars += guess + " ";
         }
 
@@ -152,27 +145,27 @@ public class Main {
     private static void setUpMapOfIndicies(char guess) {
         for (String s : mainSet) {
             ArrayList<Integer> list = countOccurances(guess, s);
-            if(mapOfIndecies.containsKey(list)){
+            if (mapOfIndecies.containsKey(list)) {
                 mapOfIndecies.get(list).add(s);
-            }else{
+            } else {
                 mapOfIndecies.put(list, new HashSet<>());
                 mapOfIndecies.get(list).add(s);
             }
         }
     }
 
-    private static ArrayList<Integer> countOccurances(char guess, String str){
+    private static ArrayList<Integer> countOccurances(char guess, String str) {
         ArrayList<Integer> indecies = new ArrayList<>(str.length());
-        for(int i = 0; i < str.length(); i++){
-            if(str.charAt(i) == guess){
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) == guess) {
                 indecies.add(i);
             }
         }
         return indecies;
     }
 
-    private static void addLetterToAnswer(char ch, ArrayList<Integer> indecies){
-        for(int i : indecies){
+    private static void addLetterToAnswer(char ch, ArrayList<Integer> indecies) {
+        for (int i : indecies) {
             gameString.setCharAt(i * 2, ch);
         }
     }

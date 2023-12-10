@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
+/**
+ * @author David Luna
+ */
 public class Main {
     final static File smallDictionaryFile = new File("SmallDictionary.txt");
     final static File fullDictionaryFile = new File("Dictionary.txt");
@@ -19,6 +22,12 @@ public class Main {
     static String triedChars;
     static int triesLeft = 0;
 
+    /**
+     * Where all the magic happens. Utilizes a while loop to continue the game if the player
+     * loses and wants to play again, and another loop within as a main game that breaks once
+     * the player loses all their guesses or if they found the missing word, prompting them 
+     * to play again. 
+     *  */
     public static void main(String[] args) {
         try { setUp(fullDictionaryFile); } catch (FileNotFoundException e) {}
 
@@ -30,10 +39,7 @@ public class Main {
 
             setUpGame(scan);
 
-            setUpBoard(wordLength);
-
-            // main game loop
-            while (gameString.toString().contains("_")) {
+            while (gameString.toString().contains("_")) { // main game loop
                 if (triesLeft <= 0) {
                     gameOver();
                     break;
@@ -59,6 +65,14 @@ public class Main {
         scan.close();
     }
 
+    /**
+     * Propts the player on a length of word and how many guesses they want.
+     * It then sets up the game by setting the main set to a set of words of that length
+     * utilizing a map.
+     * @param scan Console Scanner
+     * @throws Exception if the dictionary does not have words of that length or if the number 
+     * of guesses is unrealistic.
+     */
     private static void setUpGame(Scanner scan) {
         clearConsole();
         triedChars = "";
@@ -84,8 +98,14 @@ public class Main {
             scan.nextLine(); // buffer
             clearConsole();
         }
+
+        setUpBoard(wordLength);
     }
 
+    /**
+     * Simple game over screen diplaying the work done by the player, their previous
+     * guesses, and the "final" answer *wink wink*
+     */
     private static void gameOver() {
         clearConsole();
         System.out.println(gameString);
@@ -94,6 +114,11 @@ public class Main {
         System.out.println(mainSet.iterator().next().toUpperCase() + " was the final answer \n");
     }
 
+    /**
+     * Maps words to a set depending on the lenght of the word
+     * @param dictionaryFile
+     * @throws FileNotFoundException
+     */
     private static void setUp(File dictionaryFile) throws FileNotFoundException {
         Scanner fileScan = new Scanner(dictionaryFile);
 
@@ -108,6 +133,56 @@ public class Main {
         fileScan.close();
     }
 
+    /**
+     * Main method that handles all the "evil" part of the game.
+     * It starts by mapping every word to a family (set) of words that contain
+     * the guessed character at any index combination without making unecessary families:
+     * 
+     * guess: 'a'
+     * [0] {abc acd} 
+     * [0 1] {aab aac aad} 
+     * [2] {bca} 
+     * [] {jjj lll}
+     * 
+     * Next it iterates through the map finding the set that contatins the most words and setting
+     * the main set to it.
+     * 
+     * Finally if it is to use a set that does contain the guess, it modifies the game board to reflect
+     * the correct guess. If it does not it decreased the number of guesses left.
+     * 
+     * @param guess Character guesssed by the player
+     */
+    private static void doEvilStuff(char guess) {
+
+        setUpMapOfIndicies(guess);
+        // System.out.println(mapOfIndecies);
+
+        ArrayList<Integer> largestSetIndex = findLargestSet(mapOfIndecies);
+        
+        /*
+        * if the largest set would not add a letter to the answer or if the player guesses 
+        * the same letter again it substracts the number of guesses 
+        */
+        if (largestSetIndex.isEmpty() || triedChars.contains(guess + " ")) {
+            triesLeft--;
+        } else {
+            addLetterToAnswer(guess, largestSetIndex);
+        }
+        
+        if (!triedChars.contains(guess + " ")) {
+            triedChars += guess + " ";
+        }
+        
+        mainSet = mapOfIndecies.get(largestSetIndex);
+        mapOfIndecies.clear();
+    }
+
+    /**
+     * Iterates through the map finding the largest set of words with the most contents
+     * 
+     * @param map to Search
+     * @return List of indecies whose set is the largest
+     */
     private static ArrayList<Integer> findLargestSet(Map<ArrayList<Integer>, Set<String>> map) {
         Set<String> testSet = new HashSet<>();
         ArrayList<Integer> largestKey = new ArrayList<>();
@@ -120,40 +195,28 @@ public class Main {
         return largestKey;
     }
 
-    private static void doEvilStuff(char guess) {
-
-        setUpMapOfIndicies(guess);
-        // System.out.println(mapOfIndecies);
-
-        ArrayList<Integer> largestSetIndex = findLargestSet(mapOfIndecies);
-        Set<String> returnSet = mapOfIndecies.get(largestSetIndex);
-
-        if (largestSetIndex.isEmpty() || triedChars.contains(guess + " ")) {
-            triesLeft--;
-        } else {
-            addLetterToAnswer(guess, largestSetIndex);
-        }
-
-        if (!triedChars.contains(guess + " ")) {
-            triedChars += guess + " ";
-        }
-
-        mapOfIndecies.clear();
-        mainSet = returnSet;
-    }
-
+    /**
+     * Sets up a map using a list of indecies of the character guessed as a key
+     * and adding words whose list of indicies matches with the key to a set of words
+     * 
+     * @param guess
+     */
     private static void setUpMapOfIndicies(char guess) {
         for (String s : mainSet) {
             ArrayList<Integer> list = countOccurances(guess, s);
-            if (mapOfIndecies.containsKey(list)) {
-                mapOfIndecies.get(list).add(s);
-            } else {
+            if (!mapOfIndecies.containsKey(list))
                 mapOfIndecies.put(list, new HashSet<>());
-                mapOfIndecies.get(list).add(s);
-            }
+            mapOfIndecies.get(list).add(s);
         }
     }
 
+    /**
+     * Creates a list containing the indicies of where to find the guessed character
+     * 
+     * @param guess Character guessed by the player
+     * @param str String to check for guessed character
+     * @return  List of every index where the charcter guessed can be found
+     */
     private static ArrayList<Integer> countOccurances(char guess, String str) {
         ArrayList<Integer> indecies = new ArrayList<>(str.length());
         for (int i = 0; i < str.length(); i++) {
@@ -164,12 +227,24 @@ public class Main {
         return indecies;
     }
 
+    /**
+     * Modifies the game board to include the correcly guessed character in the
+     * String
+     * 
+     * @param ch Character to add
+     * @param indecies Where to add the character
+     */
     private static void addLetterToAnswer(char ch, ArrayList<Integer> indecies) {
         for (int i : indecies) {
             gameString.setCharAt(i * 2, ch);
         }
     }
 
+    /**
+     * Sets up the game board with underscores representing each cell.
+     * 
+     * @param length How long the word is
+     */
     private static void setUpBoard(int length) {
         gameString = new StringBuilder();
         for (int i = 0; i < length; i++) {
@@ -177,6 +252,9 @@ public class Main {
         }
     }
 
+    /**
+     * Clears the console for a clean game experience
+     */
     private static void clearConsole() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
